@@ -13,9 +13,13 @@
 
 ![Orbit 轨道主页](docs/screenshots/01-orbit-home.png)
 
-![Stack 列表视图](docs/screenshots/02-stack-list.png)
+![Orbit 轨道主页（另一视角）](docs/screenshots/02-orbit-home.png)
 
-![详情视图](docs/screenshots/03-detail.png)
+![Stack 列表视图](docs/screenshots/03-stack-list.png)
+
+![详情视图](docs/screenshots/04-detail.png)
+
+![详情视图（另一状态）](docs/screenshots/05-detail.png)
 
 ---
 

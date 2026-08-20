@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Skill图书馆 · Skill Library</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <button class="brand" id="brandBtn" aria-label="Home">
+        <span class="mark"><i></i><i></i><i></i></span>
+        <span class="brand-name">Skill图书馆</span>
+      </button>
+      <nav class="nav" aria-label="Primary">
+        <button class="nav-item active" data-route="library">图书馆</button>
+        <button class="nav-item" data-route="skills">技能</button>
+        <button class="nav-item" data-route="documents">文档</button>
+      </nav>
+      <div class="topbar-actions">
+        <button class="text-action" id="addBtn">＋ 入库</button>
+        <button class="search-btn" id="searchBtn"><span>搜索</span><kbd>⌘K</kbd></button>
+      </div>
+    </header>
+
+    <main id="main"></main>
+
+    <footer class="footer-filter" id="footerFilter">
+      <button data-filter="type" class="filter-item active">类型</button>
+      <button data-filter="category" class="filter-item">分类</button>
+      <button data-filter="updated" class="filter-item">更新</button>
+      <button data-filter="favorite" class="filter-item">收藏</button>
+    </footer>
+  </div>
+
+  <dialog id="searchDialog" class="search-dialog">
+    <form method="dialog" class="search-shell">
+      <div class="search-head">
+        <input id="searchInput" autocomplete="off" placeholder="搜索本地知识…" />
+        <button class="close-search" value="cancel" aria-label="Close">Esc</button>
+      </div>
+      <div id="searchResults" class="search-results"></div>
+    </form>
+  </dialog>
+
+  <dialog id="filterDialog" class="filter-dialog">
+    <form method="dialog" class="filter-shell">
+      <div class="filter-head"><span id="filterTitle">分类</span><button value="cancel">关闭</button></div>
+      <div id="filterOptions" class="filter-options"></div>
+    </form>
+  </dialog>
+
+  <dialog id="addDialog" class="add-dialog">
+    <form method="dialog" class="add-shell">
+      <div class="add-head"><h2>加入 Skill图书馆</h2><button value="cancel">关闭</button></div>
+      <label>文件或技能目录路径</label>
+      <input id="addPath" type="text" autocomplete="off" spellcheck="false" placeholder="/Users/you/xxx.md 或 ~/.codex/skills/xxx" />
+      <div class="add-row">
+        <div>
+          <label>类型</label>
+          <select id="addType">
+            <option value="prompt">提示词</option>
+            <option value="manual">手册</option>
+            <option value="skill">技能</option>
+            <option value="tool">工具</option>
+          </select>
+        </div>
+        <div>
+          <label>分类</label>
+          <input id="addCat" type="text" list="catOptions" placeholder="未分类" />
+          <datalist id="catOptions"></datalist>
+        </div>
+      </div>
+      <label class="add-check"><input id="addCopy" type="checkbox" checked /> 提示词/手册复制一份到库目录</label>
+      <div class="add-foot">
+        <button type="button" class="scan-link" id="scanBtn">↻ 扫描新技能</button>
+        <button type="submit" class="save-btn">入库 →</button>
+      </div>
+      <div class="add-msg" id="addMsg"></div>
+    </form>
+  </dialog>
+
+  <template id="libraryTemplate">
+    <section class="showcase-view page-enter" id="showcaseView">
+      <div class="showcase-backdrop" id="showcaseBackdrop" aria-hidden="true"></div>
+      <aside class="showcase-rail">
+        <div class="rail-kicker"><span id="libraryEyebrow">LOCAL / INDEXED</span><span id="railCounter">01 / 15</span></div>
+        <div class="rail-heading">
+          <span class="rail-section" id="railCategory">INTERFACE</span>
+          <h1 id="railTitle">Skill Library</h1>
+        </div>
+        <p class="rail-description" id="railDescription"></p>
+        <div class="rail-capabilities" id="railCapabilities"></div>
+        <dl class="rail-meta" id="railMeta"></dl>
+        <div class="rail-actions">
+          <button class="primary-action" id="showcaseOpen">查看完整能力 <span aria-hidden="true">↗</span></button>
+          <button class="quiet-action" id="statusScan">↻ 重新扫描</button>
+        </div>
+      </aside>
+      <section class="showcase-stage" id="showcaseStage" aria-label="Skill 作品展台">
+        <div class="stage-orbit" id="stageOrbit" aria-hidden="true"></div>
+        <article class="stage-frame" id="stageFrame">
+          <div class="stage-index" id="stageIndex">SKILL 01</div>
+          <div class="stage-image-wrap">
+            <img class="stage-image" id="stageImage" alt="" decoding="async" />
+          </div>
+          <div class="stage-caption">
+            <span id="stageTitle"></span>
+            <span id="stageKind"></span>
+          </div>
+        </article>
+        <div class="stage-controls">
+          <button class="round-control" id="showcasePrev" aria-label="上一个 Skill">←</button>
+          <div class="stage-scrubber" id="stageScrubber" aria-label="选择 Skill"></div>
+          <button class="round-control" id="showcaseNext" aria-label="下一个 Skill">→</button>
+        </div>
+        <p class="stage-hint">滚轮 / 方向键切换　·　点击背景“碟片”预览</p>
+      </section>
+    </section>
+  </template>
+
+  <template id="listTemplate">
+    <section class="list-view page-enter">
+      <div class="list-head">
+        <div>
+          <div class="eyebrow" id="listEyebrow">COLLECTION</div>
+          <h1 id="listTitle">技能</h1>
+        </div>
+        <div class="list-intro" id="listIntro">本机可复用的能力文件。</div>
+      </div>
+      <div class="stack-gallery" id="stackGallery"></div>
+    </section>
+  </template>
+
+  <template id="detailTemplate">
+    <section class="detail-view page-enter">
+      <button class="back-btn" id="backBtn">← 返回</button>
+      <div class="detail-grid">
+        <div class="detail-title-wrap">
+          <div class="eyebrow" id="detailKind">SKILL</div>
+          <h1 id="detailTitle"></h1>
+          <div class="detail-actions">
+            <button class="underline-action" id="favBtn">♥ 收藏</button>
+            <button class="underline-action" id="copyBtn">复制全文</button>
+            <button class="underline-action" id="openBtn">打开位置</button>
+            <button class="underline-action" id="editBtn">编辑 +</button>
+          </div>
+        </div>
+        <div class="detail-content-wrap">
+          <p class="detail-description" id="detailDescription"></p>
+          <figure class="detail-cover" id="detailCoverWrap">
+            <img id="detailCover" alt="" decoding="async" />
+          </figure>
+          <div class="hero-file" id="heroFile">
+            <div class="hero-file-top"><span id="heroFilename">SKILL.md</span><span id="heroMeta">Markdown</span></div>
+            <pre id="heroPreview"></pre>
+          </div>
+          <div class="detail-language-grid">
+            <section class="language-column chinese-guide">
+              <div class="language-label"><span id="detailGuideLabel">中文能力详解</span><span>ZH</span></div>
+              <article id="detailChinese"></article>
+            </section>
+            <section class="language-column original-guide" lang="en">
+              <div class="language-label"><span id="detailOriginalLabel">Original SKILL.md</span><span id="detailOriginalLang">EN</span></div>
+              <article class="markdown-body" id="markdownBody"></article>
+            </section>
+          </div>
+          <div class="organize-row">
+            <label>分类 <input id="orgCat" autocomplete="off" spellcheck="false" /></label>
+            <label>标签 <input id="orgTags" autocomplete="off" spellcheck="false" placeholder="a, b, c" /></label>
+            <span class="organize-hint">回车保存</span>
+          </div>
+        </div>
+      </div>
+      <div class="detail-stats" id="detailStats"></div>
+    </section>
+  </template>
+
+  <template id="editorTemplate">
+    <section class="editor-view page-enter">
+      <div class="editor-toolbar">
+        <button class="back-btn" id="editorBack">← 返回</button>
+        <div class="editor-title"><span id="editorName"></span><span class="save-state" id="saveState">已保存</span></div>
+        <div class="editor-actions">
+          <button id="previewToggle">预览</button>
+          <button id="saveBtn" class="save-btn">保存</button>
+        </div>
+      </div>
+      <div class="editor-grid" id="editorGrid">
+        <textarea id="editorArea" spellcheck="false"></textarea>
+        <div class="editor-preview" id="editorPreview"></div>
+      </div>
+    </section>
+  </template>
+
+  <div id="toast" class="toast"></div>
+  <script src="/static/skill-guides-zh.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

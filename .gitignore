@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 本地数据库：含你的私人文件路径等信息，切勿上传（含 -shm / -wal / -bak 变体）
+library.db*
+
+# 私人下载 / 整理的提示词与手册：不公开
+prompts/
+manuals/
+
+# 上述私人手册对应的封面图：本地保留，不上传
+app/static/assets/skills/ai-content-factory-1.jpg
+app/static/assets/skills/baxian-visual-manual.jpg
+app/static/assets/skills/scale-paradox-manual.jpg

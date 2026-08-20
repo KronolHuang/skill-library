@@ -21,7 +21,7 @@ function presentationFor(title) {
     : `/static/assets/skills/${encodeURIComponent(title)}.jpg`;
   return {
     cover,
-    zh: meta.tagline || "本地可复用的 Skill，点击查看完整说明与使用方法。",
+    zh: meta.tagline || "",
     guide: meta,
   };
 }
@@ -131,7 +131,7 @@ function mapItem(r) {
     path,
     filename: path.split("/").pop() || "",
     description: r.description || "",
-    zhDescription: presentation.zh,
+    zhDescription: presentation.zh || r.description || "",
     guide: presentation.guide,
     cover: presentation.cover,
     content: "",
@@ -508,7 +508,7 @@ function renderChineseGuide(item) {
     ["会交付什么", guide.output],
   ];
   if (!sections.some(([, values]) => values?.length)) {
-    return `<section class="guide-section"><h2>中文说明</h2><p>${item.zhDescription || "暂无中文详解。"}</p></section>`;
+    return `<section class="guide-section"><h2>说明</h2><p>${item.zhDescription || item.description || "暂无说明。"}</p></section>`;
   }
   return sections.filter(([, values]) => values?.length).map(([title, values], sectionIndex) => `
     <section class="guide-section">

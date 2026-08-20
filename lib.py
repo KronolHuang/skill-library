@@ -416,6 +416,8 @@ def open_in_finder(path):
     target = path if (path and os.path.isdir(path)) else os.path.dirname(path or ".")
     if sys.platform == "darwin":
         subprocess.Popen(["open", target])
+    elif sys.platform == "win32":
+        os.startfile(target)
     else:
         subprocess.Popen(["xdg-open", target])
 

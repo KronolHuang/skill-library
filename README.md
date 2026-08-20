@@ -25,25 +25,35 @@
 
 ## 一、环境要求
 
-- macOS（Linux 大部分功能也可用）
+- macOS / Windows（Linux 大部分功能也可用）
 - Python 3（建议 3.8 及以上）
 - 可选：Codex / Claude Code / Cursor / Trae（工具会自动扫描这些 agent 的技能与规则目录；一个都没有也可以手动 `add` md 文件）
 
 检查 Python：
 
+macOS / Linux：
+
 ```bash
 python3 --version
 ```
+
+Windows：
+
+```bat
+python --version
+```
+
+（如果提示不是命令，改成 `py --version` 再试）
 
 看到 `Python 3.x.x` 即为正常。
 
 ---
 
-## 二、快速开始（三步）
+## 二、快速开始
 
-### 第 1 步：把项目放到固定位置
+### macOS
 
-下载解压后，把整个文件夹放到：
+第 1 步：解压后把整个文件夹放到：
 
 ```text
 ~/Documents/Skill图书馆
@@ -51,26 +61,35 @@ python3 --version
 
 > 建议用这个固定路径。因为「library-manager 联动技能」内部写的是这个路径，换到别处需要同步改它里面的命令。
 
-### 第 2 步：给启动器加执行权限
+第 2 步：给启动器加执行权限
 
-打开「终端」，粘贴运行：
+打开「终端」，粘贴：
 
 ```bash
 chmod +x ~/Documents/Skill图书馆/start.command
 ```
 
-> 成功标志：命令执行后没有任何报错，光标直接回到下一行。
+第 3 步：启动
 
-### 第 3 步：启动
-
-任选一种：
+双击 `start.command`，或：
 
 ```bash
 cd ~/Documents/Skill图书馆
 python3 lib.py open
 ```
 
-或者直接双击文件夹里的 `start.command`。
+### Windows
+
+第 1 步：解压到任意目录（建议 `C:\Users\你的用户名\Documents\Skill图书馆`）
+
+第 2 步：双击 `start.bat`，或在命令行：
+
+```bat
+cd /d C:\Users\你的用户名\Documents\Skill图书馆
+python lib.py open
+```
+
+（如果 `python` 不是命令，把上面两处 `python` 换成 `py`）
 
 > 成功标志：浏览器自动打开 `http://127.0.0.1:8765`，看到图书馆界面。
 
@@ -172,9 +191,11 @@ rm -rf ~/.codex/skills/library-manager
 
 ---
 
-## 七、桌面快捷方式（macOS）
+## 七、桌面快捷方式
 
 项目不自带桌面图标，但提供了一键生成脚本。
+
+### macOS
 
 双击项目里的 `install-desktop-icon.command`，它会自动在桌面生成「Skill图书馆」图标。
 
@@ -182,7 +203,13 @@ rm -rf ~/.codex/skills/library-manager
 >
 > 若首次双击提示「无法打开」，右键点它 →「打开」即可（macOS 对未签名脚本的正常提示）。
 
-也可以不建图标，直接双击 `start.command` 启动。
+### Windows
+
+双击项目里的 `install-desktop-icon.bat`，它会自动在桌面生成「Skill Library」快捷方式。
+
+> 成功标志：弹出窗口显示 `Done. A shortcut named "Skill Library" is now on your Desktop.`，桌面出现图标。
+
+也可以不建图标，直接用启动器：macOS 双击 `start.command`，Windows 双击 `start.bat`。
 
 ---
 
@@ -192,7 +219,9 @@ rm -rf ~/.codex/skills/library-manager
 Skill图书馆/
 ├── lib.py                       # 主程序（本地服务 + 命令行）
 ├── start.command                # macOS 双击启动器
-├── install-desktop-icon.command # 一键创建桌面图标
+├── install-desktop-icon.command # macOS 一键创建桌面图标
+├── start.bat                    # Windows 双击启动器
+├── install-desktop-icon.bat     # Windows 一键创建桌面快捷方式
 ├── library.db                   # 本地索引数据库（首次运行自动生成）
 ├── prompts/                     # 集中存放的提示词
 ├── manuals/                     # 集中存放的手册

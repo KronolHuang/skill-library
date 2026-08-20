@@ -4,9 +4,18 @@
 
 - **网页界面**：Orbit 轨道浏览 / Stack 堆叠切换 / ⌘K 全局搜索，数据来自本机 `library.db`
 - **命令行工具**：`lib.py`，负责扫描、入库、检索
-- **Codex 联动技能**：`library-manager`，让 Codex 在安装新技能、写新 md 时主动帮你入库
+- **多 agent 支持**：自动扫描 Codex / Claude Code 的技能、Cursor / Trae 的规则，统一管理
+- **Codex 联动技能**：`library-manager`，让 Codex 在安装新技能、写新 md 时主动帮你入库、生成封面
 
 技能入库时会根据名称与描述自动分类（如 金融数据 / 图像设计 / 视频创作 / 开发工具 / 文档办公 等）。
+
+## 界面预览
+
+![Orbit 轨道主页](docs/screenshots/01-orbit-home.png)
+
+![Stack 列表视图](docs/screenshots/02-stack-list.png)
+
+![详情视图](docs/screenshots/03-detail.png)
 
 ---
 
@@ -14,7 +23,7 @@
 
 - macOS（Linux 大部分功能也可用）
 - Python 3（建议 3.8 及以上）
-- 可选：Codex（用于「扫描本机技能」和「自动入库」联动；不用 Codex 也可以手动 `add` md 文件）
+- 可选：Codex / Claude Code / Cursor / Trae（工具会自动扫描这些 agent 的技能与规则目录；一个都没有也可以手动 `add` md 文件）
 
 检查 Python：
 
@@ -69,7 +78,7 @@ python3 lib.py open
 | --- | --- |
 | `python3 lib.py open` | 启动网页并自动打开浏览器 |
 | `python3 lib.py serve` | 只启动网页，不自动开浏览器 |
-| `python3 lib.py scan` | 扫描 `~/.codex/skills` 里的技能并入库 |
+| `python3 lib.py scan` | 扫描 Codex / Claude 技能、Cursor / Trae 规则并入库 |
 | `python3 lib.py scan --system` | 同时收录内置插件技能 |
 | `python3 lib.py add <路径>` | 把文件 / 技能目录加入图书馆（交互式询问类型与分类） |
 | `python3 lib.py add <路径> -t skill -c 图像设计` | 指定类型和分类，免交互 |
@@ -86,9 +95,14 @@ cd ~/Documents/Skill图书馆
 python3 lib.py scan
 ```
 
-它会读取 `~/.codex/skills` 里每个技能的 `SKILL.md`，解析名称、描述、分类后登记进本地数据库。
+它会自动扫描这些目录并入库：
 
-> 成功标志：终端打印 `扫描完成，共登记 N 个技能`，网页里出现对应卡片。
+- Codex：`~/.codex/skills/*/SKILL.md`
+- Claude Code：`~/.claude/skills/*/SKILL.md`
+- Cursor：`~/.cursor/rules/*.mdc`
+- Trae：`~/.trae/rules/*.md`、`~/.trae-cn/rules/*.md`
+
+> 成功标志：终端打印 `扫描完成，共登记 N 条`，网页里出现对应卡片，详情页会标注来源（Codex / Claude Code / Cursor / Trae）。
 
 没有 Codex 或没有技能目录也没关系，可以用 `add` 手动加入任意 md 文件：
 
@@ -179,6 +193,7 @@ Skill图书馆/
 ├── prompts/                     # 集中存放的提示词
 ├── manuals/                     # 集中存放的手册
 ├── skills/library-manager/      # Codex 联动技能（可选安装）
+├── docs/screenshots/            # 界面截图
 ├── app/static/                  # 网页界面
 │   ├── index.html
 │   ├── app.js
@@ -193,7 +208,7 @@ Skill图书馆/
 
 ## 九、工作原理
 
-- **技能**：每次启动或运行 `scan` 时扫描 `~/.codex/skills`，解析 `SKILL.md` 的 frontmatter 自动登记
+- **技能 / 规则**：每次启动或运行 `scan` 时，自动扫描 Codex、Claude Code 的技能目录（`SKILL.md`）以及 Cursor、Trae 的规则目录（`.md` / `.mdc`），解析 frontmatter 后统一登记，来源会记录在每条目的「来源」字段里
 - **自动分类**：内置一套通用领域关键词规则，会根据技能的名称和描述自动归到「金融数据 / 图像设计 / 视频创作 / 开发工具 / 文档办公 / 数据工具 / 音频音乐 / 写作翻译」等分类。分类名是动态的，识别到新领域就会自动生成新分类，不会写死。识别不出来的会先归「未分类」，你可以手动改，或让 Codex（装了 library-manager）帮你判断
 - **提示词 / 手册**：`add` 时复制一份到 `prompts/` 或 `manuals/`，原文件不动
 - **服务**：只监听本机 `127.0.0.1`，不联网、不上传任何数据
@@ -220,7 +235,7 @@ LIB_PORT=9000 python3 lib.py open
 
 **问：`scan` 后没有技能？**
 
-答：确认 `~/.codex/skills` 目录存在，且里面有带 `SKILL.md` 的技能目录。
+答：确认下面至少有一个目录存在且有内容：Codex 的 `~/.codex/skills`、Claude Code 的 `~/.claude/skills`（里面是带 `SKILL.md` 的技能目录），或 Cursor / Trae 的规则目录。都没有的话，用 `add` 手动加 md 文件即可。
 
 **问：双击 `start.command` 提示「没有权限」？**
 

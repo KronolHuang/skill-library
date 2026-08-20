@@ -31,7 +31,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 LIB_ROOT = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(LIB_ROOT, "library.db")
-SKILLS_DIR = os.path.expanduser("~/.codex/skills")
 PLUGIN_CACHE = os.path.expanduser("~/.codex/plugins/cache")
 PROMPT_DIR = os.path.join(LIB_ROOT, "prompts")
 MANUAL_DIR = os.path.join(LIB_ROOT, "manuals")
@@ -40,6 +39,14 @@ PORT = int(os.environ.get("LIB_PORT", "8765"))
 
 TYPES = {"skill": "技能", "prompt": "提示词", "manual": "手册", "tool": "工具"}
 CONTENT_LIMIT = 60000
+
+# 支持扫描的 AI agent 来源：kind=skill 扫描目录里的 SKILL.md；kind=rule 扫描 .md/.mdc 规则文件
+AGENTS = {
+    "codex": {"label": "Codex", "dirs": ["~/.codex/skills"], "kind": "skill"},
+    "claude": {"label": "Claude Code", "dirs": ["~/.claude/skills"], "kind": "skill"},
+    "cursor": {"label": "Cursor", "dirs": ["~/.cursor/rules"], "kind": "rule"},
+    "trae": {"label": "Trae", "dirs": ["~/.trae/rules", "~/.trae-cn/rules"], "kind": "rule"},
+}
 
 # 技能自动分类：先按名称匹配（更可靠），再按描述匹配（顺序即优先级）。
 # 规则是通用领域关键词，不是针对某个人的技能库，因此换一批技能也能自动归入对应分类；
@@ -204,49 +211,88 @@ def find_plugin_skill_roots(base, maxdepth=6):
     return roots
 
 
-def scan_skills(include_system=False, quiet=False):
-    """扫描 ~/.codex/skills（以及可选的内置插件技能）并入库。"""
-    roots = [SKILLS_DIR]
-    if include_system:
-        roots += find_plugin_skill_roots(PLUGIN_CACHE)
+def _scan_skill_root(root, agent_key):
+    """扫描一个 agent 的技能目录（每个子目录含 SKILL.md），返回登记的名字列表。"""
     found = []
-    for root in roots:
-        if not os.path.isdir(root):
+    if not os.path.isdir(root):
+        return found
+    for entry in sorted(os.listdir(root)):
+        skill_dir = os.path.join(root, entry)
+        sk = os.path.join(skill_dir, "SKILL.md")
+        if not os.path.isfile(sk):
             continue
-        for entry in sorted(os.listdir(root)):
-            skill_dir = os.path.join(root, entry)
-            sk = os.path.join(skill_dir, "SKILL.md")
-            if not os.path.isfile(sk):
-                continue
-            try:
-                with open(sk, encoding="utf-8", errors="replace") as fh:
-                    text = fh.read()
-            except Exception:
-                continue
-            meta = parse_frontmatter(text)
-            name = meta.get("name") or entry
-            desc = (meta.get("description") or "").strip()
-            source = meta.get("source") or meta.get("repo") or meta.get("github") or ""
-            category = infer_skill_category(name, desc)
-            # 保留用户手动改过的分类，只在仍为默认值时更新
-            conn = db()
-            existing = conn.execute(
-                "SELECT category FROM items WHERE path = ?", (skill_dir,)
-            ).fetchone()
-            if existing and existing["category"] not in ("技能", "未分类"):
-                category = existing["category"]
-            conn.close()
-            upsert_item(
-                name=name,
-                type_="skill",
-                path=skill_dir,
-                category=category,
-                description=desc,
-                source=source,
-            )
-            found.append(name)
+        try:
+            with open(sk, encoding="utf-8", errors="replace") as fh:
+                text = fh.read()
+        except Exception:
+            continue
+        meta = parse_frontmatter(text)
+        name = meta.get("name") or entry
+        desc = (meta.get("description") or "").strip()
+        source = meta.get("source") or meta.get("repo") or meta.get("github") or agent_key
+        category = infer_skill_category(name, desc)
+        # 保留用户手动改过的分类，只在仍为默认值时更新
+        conn = db()
+        existing = conn.execute("SELECT category FROM items WHERE path = ?", (skill_dir,)).fetchone()
+        if existing and existing["category"] not in ("技能", "未分类"):
+            category = existing["category"]
+        conn.close()
+        upsert_item(name=name, type_="skill", path=skill_dir, category=category, description=desc, source=source)
+        found.append(name)
+    return found
+
+
+def _scan_rule_root(root, agent_key):
+    """扫描一个 agent 的规则文件（.md / .mdc），返回登记的名字列表。"""
+    found = []
+    if not os.path.isdir(root):
+        return found
+    for entry in sorted(os.listdir(root)):
+        if not entry.lower().endswith((".md", ".mdc")):
+            continue
+        fpath = os.path.join(root, entry)
+        if not os.path.isfile(fpath):
+            continue
+        try:
+            with open(fpath, encoding="utf-8", errors="replace") as fh:
+                text = fh.read()
+        except Exception:
+            continue
+        meta = parse_frontmatter(text)
+        name = meta.get("name") or os.path.splitext(entry)[0]
+        desc = (meta.get("description") or "").strip()
+        if not desc:
+            for line in text.splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and not line.startswith("---"):
+                    desc = line[:200]
+                    break
+        category = infer_skill_category(name, desc)
+        conn = db()
+        existing = conn.execute("SELECT category FROM items WHERE path = ?", (fpath,)).fetchone()
+        if existing and existing["category"] not in ("技能", "未分类"):
+            category = existing["category"]
+        conn.close()
+        upsert_item(name=name, type_="prompt", path=fpath, category=category, description=desc, source=agent_key)
+        found.append(name)
+    return found
+
+
+def scan_skills(include_system=False, quiet=False):
+    """扫描各 AI agent（Codex / Claude / Cursor / Trae）的技能与规则并入库。"""
+    found = []
+    for agent_key, agent in AGENTS.items():
+        for d in agent["dirs"]:
+            root = os.path.expanduser(d)
+            if agent["kind"] == "skill":
+                found += _scan_skill_root(root, agent_key)
+            else:
+                found += _scan_rule_root(root, agent_key)
+    if include_system:
+        for root in find_plugin_skill_roots(PLUGIN_CACHE):
+            found += _scan_skill_root(root, "codex")
     if not quiet:
-        print(f"扫描完成，共登记 {len(found)} 个技能")
+        print(f"扫描完成，共登记 {len(found)} 条")
     return found
 
 

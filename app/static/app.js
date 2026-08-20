@@ -2,6 +2,15 @@
 
 const TYPE_LABEL = { skill: "技能", prompt: "提示词", manual: "手册", tool: "工具" };
 const KIND_LABEL = { skill: "技能", document: "文档" };
+const AGENT_LABEL = { codex: "Codex", claude: "Claude Code", cursor: "Cursor", trae: "Trae" };
+
+function agentLabel(item) {
+  const s = (item.source || "").toLowerCase();
+  for (const [key, label] of Object.entries(AGENT_LABEL)) {
+    if (s.includes(key)) return label;
+  }
+  return "本机";
+}
 
 const SKILL_PRESENTATION = window.SKILL_GUIDES_ZH || {};
 
@@ -543,6 +552,7 @@ function renderDetail() {
   }
   const stats = [
     ["类型", typeLabel(item)],
+    ["来源", agentLabel(item)],
     ["更新", item.updated],
     ["分类", item.category],
     ["使用", item.opens + " 次"],
@@ -768,6 +778,14 @@ document.addEventListener("keydown", (e) => {
 async function init() {
   await loadItems();
   updateFilterLabels();
+  const h = location.hash;
+  if (h.startsWith("#/skills")) { setRoute("skills"); return; }
+  if (h.startsWith("#/documents")) { setRoute("documents"); return; }
+  if (h.startsWith("#/detail/")) {
+    state.selectedId = h.split("/").pop();
+    setRoute("detail");
+    return;
+  }
   render();
 }
 
